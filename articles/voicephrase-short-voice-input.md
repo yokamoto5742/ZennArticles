@@ -229,7 +229,7 @@ $OPERAND
 
 VoicePhrase は MIT ライセンスで公開しています。
 
-https://github.com/your-repo/VoicePhrase
+https://github.com/yokamoto5742/VoicePhrase
 
 特に次のいずれかに当てはまる方は、ぜひ一度触ってみてください。
 
