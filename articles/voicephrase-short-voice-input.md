@@ -1,5 +1,5 @@
 ---
-title: "Python + Google Cloud STT で自作した音声入力アプリを1日100回使ってわかったこと "
+title: "Python + Google Cloud STT で自作した音声入力アプリを1日100回以上使ってわかったこと "
 emoji: "🎙️"
 type: "tech"
 topics: ["python", "googlecloud", "windows", "音声入力"]
@@ -8,13 +8,13 @@ published: true
 
 ## はじめに: 普段使いして感じる音声入力のメリット
 
-タイピングが得意な方は、音声入力よりも自分の手で打った方が速くて正確、と思われるかもしれません。
+タイピングが得意な方は、｢音声入力よりも自分の手で打った方が速い｣と思われるかもしれません。
 
-私は自作音声入力アプリ**VoicePhrase** を **1日100回以上** 使っていますが、実感としては入力速度は **「短文ではタイピングと同程度、文章が長くなるほど音声入力のほうが速くなる」** です。
+私は自作した音声入力アプリ**VoicePhrase** を **1日100回以上** 使っていますが、入力速度は **「短文ではタイピングと同程度、文章が長くなるほど音声入力のほうが速くなる」** と実感しています。
 
-音声入力のメリットは、入力速度よりも**文章を書くハードルが下がることで返信の長さや丁寧さがよくなる効果**が大きいと思われます。 
+音声入力のメリットは、単純な入力速度よりも**文章を書くハードルが下がり、返信がより丁寧で適切な長さになる効果**が大きいと思います。 
 
-この記事では、**“文章を書くハードルを下げるツール”** としての音声入力を提案し、自作する際のポイントを共有します。
+この記事では、**“文章を書くハードルを下げるツール”** としての音声入力を提案し、自作するポイントを共有します。
 
 :::message
 本記事で紹介する VoicePhrase は Windows 向けの デスクトップアプリケーション です。Google Cloud Speech-to-Text API を利用するため、利用には Google Cloud のアカウントが必要です。
@@ -24,7 +24,7 @@ published: true
 
 既存の音声入力ツールをいくつか試しましたが、キーボードのタイピングに代わる普段使いできるツールをなかなか見つけられませんでした。
 
-- **Windows 標準の音声入力は日本語認識精度が弱い** — 業務用語や固有名詞で誤認識して結局手で打ち直すことになる
+- **Windows 標準の音声入力は日本語認識精度が弱い** — 業務用語や固有名詞を誤認識するので結局手で打ち直すことになる
 - **ファイル名変更欄やダイアログに貼り付けられない** — 「テキスト入力できる場所」が限定される
 - **クラウド型アプリはネット瞬断で音声が消えることがある** — Wi-Fi環境だと音声入力の最中にネットが切れて初めから言い直すケースがある
 
@@ -33,7 +33,7 @@ published: true
 設計のポイントは次の3点です。
 
 1. **Google Cloud Speech-to-Text API** で日本語認識精度を確保
-2. **貼り付け先を選ばない直接入力**
+2. **pyperclipとpynputを利用した場所を問わない貼り付け機能**
 3. **ローカル WAV 保存** で通信瞬断に耐え、F8 キーで再送可能
 
 ## 使ってみる — クイックスタート
@@ -126,7 +126,7 @@ VoicePhrase は録音した音声を **ローカルの WAV ファイルとして
 
 ### ポイント3: 【目玉】Tkinter + バックグラウンドスレッドの落とし穴 — UIQueueProcessor 導入
 
-**Tkinter + 音声処理のアプリを自作する人には特に共有したい話題** です。
+**Tkinterで音声入力アプリを自作する人には特に共有したい話題** です。
 
 #### 初期実装で起きたこと
 
@@ -143,11 +143,11 @@ def on_transcription_done(text: str):
 
 #### 原因: Tkinter はシングルスレッド前提
 
-Tkinter のウィジェット操作は、メインスレッド（イベントループを回しているスレッド）からのみ呼ぶ前提で設計されています。別スレッドからの操作は、運が良ければ動き、運が悪ければデッドロックする、という不安定な挙動になります。
+Tkinter はシングルスレッド前提なので、別スレッドからのウィジェット操作は不安定でデッドロックの原因になります。
 
-#### 解決: すべての UI 更新をキュー経由に統一
+#### 解決: UI 更新をキュー経由に統一
 
-`UIQueueProcessor` という小さなクラスを導入し、**UI 更新は必ずキューに積み、メインスレッドの `after()` で逐次取り出して実行する** ように統一しました。
+`UIQueueProcessor` を導入し、**UI 更新は必ずキューに積み、メインスレッドの `after()` で取り出して実行**するように統一しました。
 
 ```python:app/ui_queue_processor.py
 import queue
@@ -159,62 +159,51 @@ from typing import Callable
 class UIQueueProcessor:
     def __init__(self, root: tk.Tk):
         self.master = root
-        self._ui_queue: queue.Queue = queue.Queue()
-        self._ui_lock = threading.Lock()
-        self._is_shutting_down = False
+        self._queue: queue.Queue = queue.Queue()
+        self._lock = threading.Lock()
+        self._stopping = False
 
     def start(self) -> None:
-        """ポーリングを開始する。インスタンス生成後に明示的に呼ぶこと。"""
-        if self.is_ui_valid():
-            self.master.after(50, self._process_queue)
+        if self.is_valid():
+            self.master.after(50, self._process)
 
-    def schedule_callback(self, callback: Callable, *args) -> None:
-        """別スレッドから安全に呼べる。コールバックと引数をキューに積む。"""
-        if self._is_shutting_down:
-            return
-        self._ui_queue.put_nowait((callback, args))
+    def schedule(self, callback: Callable, *args) -> None:
+        if not self._stopping:
+            self._queue.put_nowait((callback, args))
 
-    def _process_queue(self) -> None:
-        processed = 0
-        while processed < 10:  # 1回のポーリングで最大10件処理
+    def _process(self) -> None:
+        for _ in range(10):
             try:
-                callback, args = self._ui_queue.get_nowait()
-                callback(*args)  # 引数を展開して実行
-                processed += 1
+                cb, args = self._queue.get_nowait()
+                cb(*args)
             except queue.Empty:
                 break
+        if not self._stopping and self.is_valid():
+            self.master.after(50, self._process)
 
-        if not self._is_shutting_down and self.is_ui_valid():
-            self.master.after(50, self._process_queue)
-
-    def is_ui_valid(self) -> bool:
-        if self._is_shutting_down:
+    def is_valid(self) -> bool:
+        if self._stopping:
             return False
         try:
-            with self._ui_lock:
-                return bool(self.master and self.master.winfo_exists())
+            with self._lock:
+                return bool(self.master.winfo_exists())
         except Exception:
             return False
 
     def shutdown(self) -> None:
-        self._is_shutting_down = True
+        self._stopping = True
 ```
 
-呼び出し側はこうなります。
-
 ```python
-# ✅ 別スレッドから UI を更新する正しい方法
-
-# 初期化後に必ず start() を呼ぶ
+# 初期化後に start() を呼ぶ
 ui_queue = UIQueueProcessor(root)
 ui_queue.start()
 
-# コールバックと引数を分けて渡せる
-def on_transcription_done(text: str):
-    ui_queue.schedule_callback(lambda: self.label.config(text=text))
+# 別スレッドから安全に UI 更新
+ui_queue.schedule(lambda: self.label.config(text=text))
 ```
 
-この変更で **アプリのフリーズはほぼ消滅** しました。Tkinter + バックグラウンドスレッド構成のアプリを書くなら、最初からこのパターンを採用することをおすすめします。
+この変更でフリーズはほぼ消滅しました。Tkinter + バックグラウンドスレッド構成では最初からこのパターンを推奨します。
 
 :::message alert
 「UI 更新を別スレッドから呼んでも動くことがある」のが落とし穴です。開発中は問題なくても本番運用で突然フリーズします。**全 UI 更新をキュー経由に統一する** というルールにしてください。
