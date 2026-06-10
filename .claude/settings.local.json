@@ -47,20 +47,11 @@
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -Command \"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('Claude Codeがユーザーに質問しています', 'Claude Code - 質問', 'OK', 'Information')\""
-          }
-        ]
-      }
-    ],
+    "PreToolUse": [],
     "Stop": [
       {
         "matcher": "*",
+        
         "hooks": [
           {
             "type": "command",
