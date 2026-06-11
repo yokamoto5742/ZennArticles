@@ -1,5 +1,5 @@
 ---
-title: "ファイルを1つずつ開くのが大変だったので自作したPDF横断検索アプリ"
+title: "業務マニュアル検索にRAGは必要？PythonでPDF横断検索＋自動ハイライトアプリを作った話"
 emoji: "🔍"
 type: "tech"
 topics: ["python", "windows", "全文検索"]
