@@ -1,5 +1,5 @@
 ---
-title: "GeminiのOCRで文章がまるごと抜け落ちる — Cloud Vision APIを今でも使う理由」"
+title: "GeminiのOCRで文章がまるごと抜け落ちる — Cloud Vision APIを今でも使う理由"
 emoji: "🔍"
 type: "tech"
 topics: ["python", "googlecloud", "ocr", "LLM", "windows"]
@@ -58,7 +58,7 @@ Cloud Vision APIは検出した文字をそのまま返しますが、Gemini は
 :::
 
 - 正確さが要求される業務文書や研修資料 → **Cloud Vision API**
-- 表をMarkdown化したい / 翻訳も同時にしたい / 多少の改変は許容できる → **Gemini** などのマルチモーダルLLM
+- 表をMarkdown化したい / OCR結果を全文きちんと人の目で確認するのが前提 / 多少の改変は許容できる → **Gemini** などのマルチモーダルLLM
 
 私は前者の用途が多いので、基本的には Cloud Vision API を利用しています。
 
@@ -92,3 +92,9 @@ LLMにはOCR処理に加えて出力結果のMarkdown化や翻訳など、OCR専
 「LLMは既存の技術をすべて置き換える」と思われがちですが、現時点では「確実な転写は Cloud Vision API」「構造化や同時翻訳は Gemini」と、用途に合わせて使い分けるのがよいと思います。
 
 LLMのOCR処理で出力がうまくいかずに困っている方は、一度 Cloud Vision API を試すのがよいかもしれません。VisionOCR がその一助になれば幸いです。
+
+## 追記（2026年9月現在）
+
+その後もVisionOCR は継続して使っていますが、2026年9月現在、**Gemini Flash 3.8** によるOCRはスピードと正確さの双方が劇的に改善しているのを実感しています。
+
+LLMの性能向上はめざましいため、今後もAIモデルのアップデートに合わせて適宜試し、比較・検証を続けていきたいと思います。
