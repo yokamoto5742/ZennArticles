@@ -16,10 +16,6 @@ published: true
 
 この記事では、**既製ツールや RAG に限界を感じて自作しようとする方**に向けて、今でも全文検索＋ハイライト表示を使う理由と、試行錯誤した設計のポイントを共有します。
 
-:::message
-ManualSearch は個人的に欲しくて作ったツールで、大規模な導入実績はまだありません。ソースコードは GitHub で公開しています。
-:::
-
 https://github.com/yokamoto5742/ManualSearch
 
 ### 対象読者
