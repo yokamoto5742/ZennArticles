@@ -2,32 +2,29 @@
   "permissions": {
     "allow": [
       "Bash(mkdir:*)",
+      "Bash(dir:*)",
+      "Bash(git commit:*)",
       "Bash(python -m pytest tests/ -v)",
       "Bash(python -m pytest --version)",
       "Bash(windows-notify:*)",
       "Bash(python -m pytest tests/ -v --tb=short)",
-      "Bash(py -m pytest tests/ -v --tb=short)",
-      "Bash(py -c \"import pytest; print(pytest.__version__)\")",
       "Bash(claude config --help)",
       "Bash(claude config list)",
       "Bash(powershell:*)",
       "Bash(claude config get hooks)",
-      "Bash(git commit:*)",
-      "Bash(dir:*)",
       "Bash(python -m pytest tests/ -v --tb=short --disable-warnings)",
       "Bash(rm:*)"
     ],
     "deny": [
-      "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(git rebase:*)",
       "Read(.env.*)",
       "Read(id_rsa)",
       "Read(id_ed25519)",
       "Read(docs/LICENSE*)",
-      "Write(.env*)",
-      "Write(docs/LICENSE*)",
-      "Write(**/secrets/**)",
+      "Edit(.env*)",
+      "Edit(docs/LICENSE*)",
+      "Edit(**/secrets/**)",
       "Bash(curl:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm remove:*)",
@@ -36,6 +33,7 @@
     "ask": []
   },
   "hooks": {
+    "PostToolUse": [],
     "PermissionRequest": [
       {
         "matcher": "",
@@ -51,7 +49,6 @@
     "Stop": [
       {
         "matcher": "*",
-        
         "hooks": [
           {
             "type": "command",
